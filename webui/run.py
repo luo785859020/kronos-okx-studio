@@ -17,6 +17,8 @@ def check_dependencies():
         import pandas
         import numpy
         import plotly
+        import websocket
+        import filelock
         print("✅ All dependencies installed")
         return True
     except ImportError as e:
@@ -28,7 +30,7 @@ def install_dependencies():
     """Install dependencies"""
     print("Installing dependencies...")
     try:
-        subprocess.check_call([sys.executable, "-m", "pip", "install", "-r", "requirements.txt"])
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "-r", os.path.join(os.path.dirname(__file__), "requirements.txt")])
         print("✅ Dependencies installation completed")
         return True
     except subprocess.CalledProcessError:
@@ -37,7 +39,7 @@ def install_dependencies():
 
 def main():
     """Main function"""
-    print("🚀 Starting Kronos Web UI...")
+    print("🚀 Starting Kronos OKX Studio...")
     print("=" * 50)
     
     # Check dependencies
@@ -76,10 +78,10 @@ def main():
         
         # Auto-open browser
         time.sleep(2)
-        webbrowser.open('http://localhost:7070')
+        webbrowser.open('http://127.0.0.1:7070/okx')
         
         # Start Flask application
-        app.run(debug=True, host='0.0.0.0', port=7070)
+        app.run(debug=False, host='127.0.0.1', port=7070, use_reloader=False)
         
     except Exception as e:
         print(f"❌ Startup failed: {e}")

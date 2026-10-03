@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="okx-control" content="{{ control_token }}">
+    <title>Kronos OKX Studio · 实时预测</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='okx.css') }}">
+    <script defer src="{{ url_for('okx_dashboard.plotly_asset') }}"></script>
+    <script defer src="{{ url_for('static', filename='okx.js') }}"></script>
+</head>
+<body>
+    <header class="topbar">
+        <a class="brand" href="/okx"><span class="brand-mark">K</span><strong>KRONOS</strong><span class="brand-sub">OKX STUDIO</span></a>
+        <nav aria-label="主导航"><a class="active" href="/okx" aria-current="page">实时预测</a><a href="/">CSV 实验</a></nav>
+        <span class="readonly">● 只读模式 · 不下单</span>
+    </header>
+    <main class="workspace">
+        <div class="page-heading"><div><p class="eyebrow">LIVE MARKET / OKX SPOT</p><h1>行情在变化，预测可追溯。</h1><p>基于已收盘 K 线生成未来路径。不需要 API 密钥，不访问你的账户。</p></div><div class="refresh-tag"><span id="poll-dot" class="dot"></span><span id="refresh-label">正在连接本地服务</span></div></div>
+        <div id="message" role="status" aria-live="polite" hidden></div>
+        <div class="dashboard-layout">
+            <aside class="panel controls">
+                <div class="section-heading"><h2>预测设置</h2><span class="small-tag">SPOT</span></div>
+                <form id="settings-form">
+                    <fieldset id="settings-fields">
+                        <label for="inst-preset">现货币对</label>
+                        <select id="inst-preset" aria-describedby="inst-note">
+                            <option value="BTC-USDT">BTC-USDT · 比特币</option>
+                            <option value="DOGE-USDT">DOGE-USDT · 狗狗币</option>
+                            <option value="ETH-USDT">ETH-USDT · 以太坊</option>
+                            <option value="SOL-USDT">SOL-USDT · 索拉纳</option>
+                            <option value="custom">其他币对（手动输入）</option>
+                        </select>
+                        <div id="custom-inst-field" hidden>
+                            <label for="inst-id">自定义现货币对</label>
+                            <input id="inst-id" name="inst_id" value="BTC-USDT" required pattern="[A-Z0-9]{1,20}-[A-Z0-9]{1,20}" maxlength="41" autocomplete="off" placeholder="例如 XRP-USDT">
+                        </div>
+                        <p id="inst-note" class="field-note">列表中可直接选择狗狗币；切换币对前请先停止当前预测。</p>
+                        <div class="field-grid"><div><label for="bar">K 线周期</label><select id="bar" name="bar"><option>1m</option><option>3m</option><option selected>5m</option><option>15m</option><option>30m</option><option>1H</option><option>2H</option><option>4H</option></select></div><div><label for="region">服务区域</label><select id="region" name="region"><option value="global">Global</option><option value="us">US</option><option value="eea">EEA</option></select></div></div>
+                        <p class="field-note">按你有资格使用的 OKX 站点选择区域。</p>
+                        <div class="field-grid"><div><label for="lookback">历史窗口</label><input id="lookback" name="lookback" type="number" min="2" max="512" value="256" required></div><div><label for="pred-len">预测根数</label><input id="pred-len" name="pred_len" type="number" min="1" max="512" value="12" required></div></div>
+                        <label for="device">推理设备</label>
+                        <select id="device" name="device" aria-describedby="device-note"><option value="cpu">CPU · 处理器</option><option value="cuda:0" disabled>GPU · 正在检测</option></select>
+                        <p id="device-note" class="field-note" role="status">正在检测当前 Python 环境的 GPU 支持…</p>
+                    </fieldset>
+                    <div class="model-card"><span class="model-icon">K</span><div><strong>Kronos-small</strong><span id="model-device">CPU · 固定版本 · 本地权重缓存</span></div></div>
+                    <button id="start-btn" class="button primary" type="submit">启动实时预测 <span>→</span></button>
+                    <button id="stop-btn" class="button secondary" type="button" disabled>停止预测</button>
+                </form>
+                <div class="divider"></div>
+                <h3>运行状态</h3>
+                <dl class="status-list"><div><dt>预测进程</dt><dd id="process-state">读取中</dd></div><div><dt>行情连接</dt><dd id="connection-state">—</dd></div><div><dt>本轮生成</dt><dd id="session-count">—</dd></div><div><dt>时间基准</dt><dd>UTC</dd></div></dl>
+                <p id="runtime-note" class="field-note">首次启动会校验行情并加载模型，请稍候。</p>
+                <div class="safety-note"><strong>只预测，不交易</strong><p>变化率是模型原始预测，不是收益、置信度或买卖建议。无需填写任何密钥。</p></div>
+            </aside>
+            <section class="content" aria-label="预测结果">
+                <div class="metrics">
+                    <article class="metric"><span>最近历史收盘价</span><strong id="last-close">—</strong><small id="market-label">BTC-USDT · 5m</small></article>
+                    <article class="metric"><span>预测期末收盘价</span><strong id="predicted-close">—</strong><small id="horizon-label">未来 12 根 K 线</small></article>
+                    <article class="metric"><span>预测变化 · 未扣成本</span><strong id="predicted-return">—</strong><small>不是实际交易收益</small></article>
+                    <article class="metric"><span>预测完成时间 · UTC</span><strong id="completed-time" class="time-value">—</strong><small id="completed-date">尚无预测记录</small></article>
+                </div>
+                <article class="panel chart-panel">
+                    <div class="chart-heading"><div><h2>历史与未来路径 <span id="view-badge" class="small-tag">等待数据</span></h2><p id="chart-subtitle">只使用已确认收盘行情，未来价格由模型生成。</p></div><div class="chart-actions"><label class="toggle"><input type="checkbox" id="follow-latest" checked> 跟随最新</label><button type="button" id="refresh-btn" class="button compact">刷新</button></div></div>
+                    <div class="legend"><span><i class="legend-history"></i>历史 K 线</span><span><i class="legend-forecast"></i>预测 K 线</span><span class="legend-muted">虚线右侧为预测区间 · 时间均为 UTC</span></div>
+                    <div id="chart-empty" class="empty-state"><div class="empty-bars"><i></i><i></i><i></i><i></i><i></i></div><h3>等待第一条预测</h3><p>选择币对并启动。加载完成后会先生成当前窗口预测，<br>随后每根新 K 线收盘时自动更新。</p></div>
+                    <div id="okx-chart" hidden aria-label="历史和预测蜡烛图"></div>
+                </article>
+                <div class="bottom-grid">
+                    <article class="panel records-panel"><div class="section-heading"><h2>预测记录</h2><span id="record-count" class="small-tag">0 条</span></div><p class="field-note">点击记录回看当时的预测；最多显示最近 100 条。</p><div class="table-scroll"><table><thead><tr><th>历史截止 · UTC</th><th>预测变化</th><th></th></tr></thead><tbody id="record-body"><tr><td colspan="3" class="empty-row">暂无记录</td></tr></tbody></table></div></article>
+                    <article class="panel logs-panel"><div class="section-heading"><h2>运行日志</h2><span class="small-tag">最近 35 行</span></div><pre id="runtime-log" tabindex="0">等待启动预测进程…</pre></article>
+                </div>
+                <footer class="footnote">每 3 秒读取本地状态 · 页面关闭不会停止预测，请使用“停止预测”按钮 · 模型持续预测 ≠ 交易系统</footer>
+            </section>
+        </div>
+    </main>
+</body>
+</html>

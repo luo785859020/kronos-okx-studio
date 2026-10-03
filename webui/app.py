@@ -22,7 +22,10 @@ except ImportError:
     print("Warning: Kronos model cannot be imported, will use simulated data for demonstration")
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, resources={r"/api/(?!okx/).*": {"origins": "*"}})
+
+from webui.okx_dashboard import register_okx
+register_okx(app)
 
 # Global variables to store models
 tokenizer = None
@@ -698,11 +701,11 @@ def get_model_status():
         })
 
 if __name__ == '__main__':
-    print("Starting Kronos Web UI...")
+    print("Starting Kronos OKX Studio...")
     print(f"Model availability: {MODEL_AVAILABLE}")
     if MODEL_AVAILABLE:
         print("Tip: You can load Kronos model through /api/load-model endpoint")
     else:
         print("Tip: Will use simulated data for demonstration")
     
-    app.run(debug=True, host='0.0.0.0', port=7070)
+    app.run(debug=False, host='127.0.0.1', port=7070, use_reloader=False)

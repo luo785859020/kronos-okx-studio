@@ -61,6 +61,10 @@ logs/
 
 # Environment
 .env
+.env.*
+!.env.example
+*.pem
+*.key
 .venv
 env/
 venv/
@@ -74,3 +78,8 @@ venv.bak/
 temp/
 tmp/
 .python-version
+outputs/
+.cache/
+.python/
+/data/
+/webui/prediction_results/

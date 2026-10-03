@@ -18,6 +18,8 @@ CSV文件必须包含以下列：
 
 (volume和amount可以全0如果没有这部分的数据)
 
+每个样本仅使用前 `lookback_window` 条历史数据计算逐列均值和标准差，再将相同统计量应用到整个训练窗口并裁剪到 `[-clip, clip]`。未来目标不参与归一化统计，避免未来信息泄漏，并与推理时的预处理保持一致。
+
 ### 示例数据格式
 
 | timestamps | open | close | high | low | volume | amount |

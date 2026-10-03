@@ -18,6 +18,8 @@ Your CSV file must contain the following columns:
 
 (volume and amount can be 0 if not available)
 
+Each sample computes per-feature mean and standard deviation from only the first `lookback_window` historical rows, then applies those statistics and `[-clip, clip]` clipping to the entire training window. Future targets do not affect normalization, preventing future-information leakage and matching inference preprocessing.
+
 ### Sample Data Format
 
 | timestamps | open | close | high | low | volume | amount |
